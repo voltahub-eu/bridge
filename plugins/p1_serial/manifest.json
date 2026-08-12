@@ -1,0 +1,8 @@
+{
+  "id": "p1_serial",
+  "version": "2.0.0",
+  "protocol": "serial",
+  "capabilities": ["read"],
+  "min_agent_version": "2.0.0",
+  "collect_interval_s": 10
+}

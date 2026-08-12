@@ -1,0 +1,31 @@
+[Unit]
+Description=Voltahub Bridge (edge agent: plugins, WS sync, local webserver)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/voltahub-bridge
+ExecStart=/opt/voltahub-bridge/venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=DB_PATH=/data/agent.db
+Environment=PLUGIN_DIR=/data/plugins
+# Optional per-device file to override PLATFORM_WS_URL/PLATFORM_API_URL/
+# AGENT_KEY (outside the git working tree, so it survives OTA updates).
+EnvironmentFile=-/etc/voltahub-bridge/env
+
+# Hardening: the process deliberately runs as root (needs to be able to
+# restart itself via systemctl and write OTA updates to
+# /opt/voltahub-bridge), but these options limit the damage if the process
+# is ever compromised. NoNewPrivileges is safe because this process never
+# uses sudo/setuid to elevate privileges — it's already root. ProtectSystem=
+# strict makes the rest of the system read-only; only the paths the agent
+# and the OTA update actually write to are explicitly opened up.
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/voltahub-bridge /data /etc/voltahub-bridge
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+config.json
+cache.db
+state.json
+signals.json

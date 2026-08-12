@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voltahub - Bridge</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f9fb;
+    --card: #ffffff;
+    --card-border: #d8e1e8;
+    --fg: #0f1720;
+    --muted: #5b6778;
+    --primary: #2d7fea;   /* Data Blue */
+    --teal: #16b6a5;      /* Insight Teal */
+    --success: #6cc53a;   /* Growth Green */
+    --warning: #b4790c;
+    --danger: #d92d38;
+    --danger-bg: rgba(217,45,56,0.07);
+    --danger-border: rgba(217,45,56,0.3);
+    --danger-fg: #a3202b;
+    --radius-card: 16px;
+    --radius-control: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0e14;
+      --card: #12161f;
+      --card-border: rgba(255,255,255,0.07);
+      --fg: #eef1f5;
+      --muted: #8b93a3;
+      --warning: #e6a23c;
+      --danger: #ef4a55;
+      --danger-bg: rgba(239,74,85,0.1);
+      --danger-border: rgba(239,74,85,0.35);
+      --danger-fg: #ff9298;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 2rem 1.25rem;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
+  h1 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+  .logo-badge { display: inline-flex; align-items: center; line-height: 0; }
+  .logo-badge img { height: 36px; width: auto; display: block; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    padding: 1.1rem 1.25rem;
+  }
+  .card-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.6rem;
+  }
+  .card.card-danger {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+  }
+  .card-desc {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin: -0.3rem 0 0.9rem;
+  }
+  .card-desc.card-desc-danger {
+    color: var(--danger-fg);
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 0.9rem;
+  }
+  .row:last-child { border-bottom: none; }
+  .plugin-entry { border-bottom: 1px solid var(--card-border); padding: 0.5rem 0; }
+  .plugin-entry:last-child { border-bottom: none; }
+  .plugin-entry .row { border-bottom: none; padding: 0; }
+  .row > span:first-child { display: flex; align-items: center; min-width: 0; }
+  .row > span:last-child { color: var(--fg); font-variant-numeric: tabular-nums; text-align: right; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 0.55rem; flex-shrink: 0; background: var(--muted); }
+  .dot.ok { background: var(--success); }
+  .dot.degraded, .dot.paused { background: var(--warning); }
+  .dot.error, .dot.timeout { background: var(--danger); }
+  .meta { color: var(--muted); font-size: 0.8rem; }
+  .plugin-name { font-weight: 600; }
+  .plugin-slug { color: var(--muted); font-size: 0.78rem; margin-left: 0.35rem; font-weight: 400; }
+  .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.75rem; }
+  .field label { font-size: 0.78rem; color: var(--muted); }
+  .field input {
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-control);
+    color: var(--fg);
+    padding: 0.55rem 0.7rem;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+  }
+  .field input:focus { outline: none; border-color: var(--primary); }
+  .input-with-action { display: flex; gap: 0.5rem; }
+  .input-with-action input { flex: 1; min-width: 0; }
+  .input-action-btn {
+    background: var(--card-border);
+    color: var(--fg);
+    border: none;
+    border-radius: var(--radius-control);
+    padding: 0 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .input-action-btn:hover { filter: brightness(1.08); }
+  .btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-control);
+    padding: 0.55rem 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .btn:hover:not(:disabled) { filter: brightness(1.08); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .btn-secondary { background: var(--card-border); color: var(--fg); }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .actions { display: flex; gap: 0.6rem; margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--card-border); }
+  .status-msg { font-size: 0.8rem; margin-top: 0.6rem; }
+  .status-msg.ok { color: var(--success); }
+  .status-msg.error { color: var(--danger); }
+  .banner {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-fg);
+    border-radius: var(--radius-control);
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    display: none;
+  }
+  .empty { color: var(--muted); font-size: 0.85rem; }
+  .error-detail { color: var(--danger); font-size: 0.78rem; margin-top: 0.15rem; }
+  .data-toggle { display: inline-block; font-size: 0.78rem; color: var(--primary); text-decoration: none; margin-top: 0.3rem; }
+  .data-toggle:hover { text-decoration: underline; }
+  .readings-panel {
+    margin-top: 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-control);
+    padding: 0.5rem 0.75rem;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .readings-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .readings-table td { padding: 0.2rem 0.4rem; border-bottom: 1px solid var(--card-border); }
+  .readings-table tr:last-child td { border-bottom: none; }
+  .readings-table td:first-child { color: var(--muted); font-family: "JetBrains Mono", ui-monospace, monospace; }
+  .readings-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0.15rem 0.3rem;
+    font-size: 0.85rem;
+    line-height: 1;
+    margin-left: 0.4rem;
+  }
+  .icon-btn:hover { color: var(--primary); }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    z-index: 50;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    padding: 1.1rem 1.25rem;
+    width: 100%;
+    max-width: 360px;
+  }
+  .logs {
+    margin-top: 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-control);
+    padding: 0.75rem;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>
+      <span class="logo-badge">
+        <img src="/static/voltahub-logo.png" alt="Voltahub">
+      </span>
+    </h1>
+    <div class="banner" id="auth-banner"></div>
+
+    <div class="card">
+      <p class="card-title">Device</p>
+      <div id="device"></div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="logs-toggle" onclick="toggleLogs()">View logs</button>
+        <button class="btn btn-danger" id="restart-btn" onclick="restartAgent()">Restart agent</button>
+      </div>
+      <div class="status-msg" id="restart-status"></div>
+      <pre class="logs" id="logs-panel" hidden></pre>
+    </div>
+
+    <div class="modal-overlay" id="platform-url-modal" hidden>
+      <div class="modal">
+        <p class="card-title">Change platform URL</p>
+
+        <div id="platform-url-step-password">
+          <div class="field">
+            <label for="platform-url-password">Password</label>
+            <input id="platform-url-password" type="password" autocomplete="off">
+          </div>
+          <div class="status-msg" id="platform-url-password-status"></div>
+          <div class="actions">
+            <button class="btn" id="platform-url-password-submit" onclick="submitPlatformUrlPassword()">Continue</button>
+            <button class="btn btn-secondary" onclick="closePlatformUrlModal()">Cancel</button>
+          </div>
+        </div>
+
+        <div id="platform-url-step-fields" hidden>
+          <div class="field">
+            <label for="platform-ws-url-input">Platform WS URL</label>
+            <input id="platform-ws-url-input" type="text" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="platform-api-url-input">Platform API URL</label>
+            <input id="platform-api-url-input" type="text" autocomplete="off">
+          </div>
+          <div class="status-msg" id="platform-url-status"></div>
+          <div class="actions">
+            <button class="btn" id="platform-url-submit" onclick="submitPlatformUrl()">Save</button>
+            <button class="btn btn-secondary" onclick="closePlatformUrlModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-title">Active integrations</p>
+      <div id="plugins"></div>
+    </div>
+
+    <div class="card" id="token-card">
+      <p class="card-title" id="token-card-title">Agent token</p>
+      <p class="card-desc" id="token-card-desc">
+        Enter the device token here (found in the web app for this device) to link this bridge to the platform.
+      </p>
+      <div class="field">
+        <label for="token-input">vh_br_...</label>
+        <div class="input-with-action">
+          <input id="token-input" type="password" placeholder="vh_br_..." autocomplete="off">
+          <button type="button" class="input-action-btn" id="token-toggle" onclick="toggleTokenVisibility()">Show</button>
+        </div>
+      </div>
+      <button class="btn" id="token-submit" onclick="submitToken()">Save token</button>
+      <div class="status-msg" id="token-status"></div>
+    </div>
+  </div>
+
+  <script>
+    let tokenPrefilled = false;
+    let lastDevice = null;
+    let platformUrlPassword = '';
+
+    function openPlatformUrlModal() {
+      document.getElementById('platform-url-modal').hidden = false;
+      document.getElementById('platform-url-step-password').hidden = false;
+      document.getElementById('platform-url-step-fields').hidden = true;
+      document.getElementById('platform-url-password').value = '';
+      document.getElementById('platform-url-password-status').textContent = '';
+      document.getElementById('platform-url-password-status').className = 'status-msg';
+    }
+
+    function closePlatformUrlModal() {
+      document.getElementById('platform-url-modal').hidden = true;
+      platformUrlPassword = '';
+    }
+
+    async function submitPlatformUrlPassword() {
+      const password = document.getElementById('platform-url-password').value.trim();
+      const statusEl = document.getElementById('platform-url-password-status');
+      const btn = document.getElementById('platform-url-password-submit');
+      statusEl.textContent = '';
+      statusEl.className = 'status-msg';
+
+      if (!password) {
+        statusEl.textContent = 'Enter a password.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        const resp = await fetch('/api/platform-url/verify-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          statusEl.textContent = data.detail || 'Incorrect password';
+          statusEl.classList.add('error');
+          return;
+        }
+      } catch (e) {
+        statusEl.textContent = 'Connection error';
+        statusEl.classList.add('error');
+        return;
+      } finally {
+        btn.disabled = false;
+      }
+
+      platformUrlPassword = password;
+      document.getElementById('platform-ws-url-input').value = lastDevice?.platform_ws_url ?? '';
+      document.getElementById('platform-api-url-input').value = lastDevice?.platform_api_url ?? '';
+      document.getElementById('platform-url-step-password').hidden = true;
+      document.getElementById('platform-url-step-fields').hidden = false;
+      document.getElementById('platform-url-status').textContent = '';
+      document.getElementById('platform-url-status').className = 'status-msg';
+    }
+
+    async function submitPlatformUrl() {
+      const statusEl = document.getElementById('platform-url-status');
+      const btn = document.getElementById('platform-url-submit');
+      statusEl.textContent = '';
+      statusEl.className = 'status-msg';
+
+      const platform_ws_url = document.getElementById('platform-ws-url-input').value.trim();
+      const platform_api_url = document.getElementById('platform-api-url-input').value.trim();
+      const password = platformUrlPassword;
+
+      if (!platform_ws_url || !platform_api_url) {
+        statusEl.textContent = 'Fill in both fields.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        const resp = await fetch('/api/platform-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ platform_ws_url, platform_api_url, password }),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          platformUrlPassword = '';
+          closePlatformUrlModal();
+        } else if (resp.status === 403) {
+          // Wrong password: go back to the password step instead of staying
+          // stuck here with fields that can't be saved anyway.
+          platformUrlPassword = '';
+          document.getElementById('platform-url-step-fields').hidden = true;
+          document.getElementById('platform-url-step-password').hidden = false;
+          const pwStatus = document.getElementById('platform-url-password-status');
+          pwStatus.textContent = data.detail || 'Incorrect password';
+          pwStatus.classList.add('error');
+        } else {
+          statusEl.textContent = data.detail || 'Save failed';
+          statusEl.classList.add('error');
+        }
+      } catch (e) {
+        statusEl.textContent = 'Connection error';
+        statusEl.classList.add('error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('token-input');
+      const btn = document.getElementById('token-toggle');
+      const revealed = input.type === 'text';
+      input.type = revealed ? 'password' : 'text';
+      btn.textContent = revealed ? 'Show' : 'Hide';
+    }
+
+    function formatTimestamp(iso) {
+      if (!iso) return null;
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      return d.toLocaleString('en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      });
+    }
+
+    async function refresh() {
+      try {
+        const [health, device] = await Promise.all([
+          fetch('/api/health').then(r => r.json()),
+          fetch('/api/device').then(r => r.json()),
+        ]);
+
+        const banner = document.getElementById('auth-banner');
+        if (health.agent_status === 'auth_error') {
+          banner.style.display = 'block';
+          banner.textContent = '⚠ Agent token is invalid: ' + (health.auth_error || 'authentication failed') +
+            ' — update the token below.';
+        } else {
+          banner.style.display = 'none';
+        }
+
+        // Fills the token field once with the current value (not on every
+        // refresh, otherwise that would overwrite what the user is typing).
+        // Hidden by default (type="password"); fully viewable via the
+        // Show/Hide button.
+        if (!tokenPrefilled && device.agent_key) {
+          document.getElementById('token-input').value = device.agent_key;
+          tokenPrefilled = true;
+        }
+
+        const tokenMissing = !device.agent_key;
+        document.getElementById('token-card').classList.toggle('card-danger', tokenMissing);
+        document.getElementById('token-card-desc').classList.toggle('card-desc-danger', tokenMissing);
+        document.getElementById('token-card-desc').textContent = tokenMissing
+          ? 'No token entered yet — this bridge is not yet linked to the platform. Enter the device token (found in the web app for this device) to link it.'
+          : 'Enter the device token here (found in the web app for this device) to link this bridge to the platform.';
+
+        const diskLine = device.disk_total_gb
+          ? `${device.disk_used_gb} / ${device.disk_total_gb} GB (${device.disk_percent}%)` : '-';
+
+        // Above ~2 flush cycles' worth (30s interval) signals a real backlog
+        // rather than the normal handful of readings mid-flush.
+        const unsyncedCount = health.unsynced_count ?? 0;
+        const unsyncedWarn = unsyncedCount > 1000;
+        const unsyncedLine = unsyncedCount.toLocaleString('en-GB') + (unsyncedWarn ? ' ⚠' : '');
+
+        document.getElementById('device').innerHTML = `
+          <div class="row"><span>Device</span><span>${device.device_id ?? '-'}</span></div>
+          <div class="row"><span>Version</span><span>${device.agent_version}</span></div>
+          <div class="row"><span>Uptime</span><span>${Math.floor(device.uptime_s / 3600)}h ${Math.floor((device.uptime_s % 3600) / 60)}m</span></div>
+          <div class="row"><span>Last boot</span><span>${formatTimestamp(device.boot_time) ?? '-'}</span></div>
+          <div class="row"><span>Network</span><span>${device.network_mode}</span></div>
+          <div class="row"><span>Local IP address</span><span>${device.local_ip ?? '-'}</span></div>
+          <div class="row"><span>Subnet mask</span><span>${device.subnet_mask ?? '-'}</span></div>
+          <div class="row"><span>Disk space</span><span>${diskLine}</span></div>
+          <div class="row"><span>CPU temperature</span><span>${device.cpu_temp_c != null ? device.cpu_temp_c + ' °C' : '-'}</span></div>
+          <div class="row"><span>Unsynced readings</span><span style="${unsyncedWarn ? 'color:var(--danger-fg)' : ''}">${unsyncedLine}</span></div>
+          <div class="row">
+            <span>Platform WS URL</span>
+            <span>${device.platform_ws_url ?? '-'} <button type="button" class="icon-btn" title="Change platform URL" onclick="openPlatformUrlModal()">&#9998;</button></span>
+          </div>
+          <div class="row"><span>Platform API URL</span><span>${device.platform_api_url ?? '-'}</span></div>
+        `;
+        lastDevice = device;
+
+        const plugins = health.plugins || [];
+        document.getElementById('plugins').innerHTML = plugins.length
+          ? plugins.map(p => {
+              // Primary: user-friendly integration name ("HomeWizard Water Meter"),
+              // with the instance name/id after it (e.g. "— water-edge2"), so that
+              // with multiple instances of the same integration you can tell them apart.
+              const primary = p.integration_name || p.id;
+              const instanceLabel = p.label || p.slug || '';
+              const slugSuffix = (p.slug && p.slug !== instanceLabel) ? ` (${p.slug})` : '';
+              const instancePart = instanceLabel ? `<span class="plugin-slug">— ${instanceLabel}${slugSuffix}</span>` : '';
+              const versionPart = p.installed_version ? `<span class="plugin-slug">v${p.installed_version}</span>` : '';
+              const statusNote = p.status === 'paused' ? ' <span class="meta">(paused)</span>'
+                : p.status === 'degraded' ? ' <span class="meta">(fault)</span>' : '';
+              const errorLine = (p.last_error && p.status !== 'paused' && p.status !== 'ok')
+                ? `<div class="error-detail">${p.last_error}</div>` : '';
+              const dataToggle = (p.status !== 'paused' && p.last_reading_at)
+                ? `<a href="#" class="data-toggle" onclick="toggleReadings(event, '${p.id}')">View latest data</a>` : '';
+              return `
+                <div class="plugin-entry">
+                  <div class="row">
+                    <span><span class="dot ${p.status}"></span><span class="plugin-name">${primary}</span> ${instancePart} ${versionPart}${statusNote}</span>
+                    <span class="meta">${p.status === 'paused' ? '' : (formatTimestamp(p.last_reading_at) ?? 'no data')}</span>
+                  </div>
+                  ${errorLine}
+                  ${dataToggle}
+                  <div class="readings-panel" id="readings-${p.id}" hidden></div>
+                </div>
+              `;
+            }).join('')
+          : '<div class="empty">No plugins active</div>';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    refresh();
+    setInterval(refresh, 10000);
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('token-input');
+      const btn = document.getElementById('token-toggle');
+      const hidden = input.type === 'password';
+      input.type = hidden ? 'text' : 'password';
+      btn.textContent = hidden ? 'Hide' : 'Show';
+    }
+
+    async function submitToken() {
+      const token = document.getElementById('token-input').value.trim();
+      const statusEl = document.getElementById('token-status');
+      const btn = document.getElementById('token-submit');
+      statusEl.textContent = '';
+      statusEl.className = 'status-msg';
+
+      if (!token) {
+        statusEl.textContent = 'Enter a token.';
+        statusEl.classList.add('error');
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        const resp = await fetch('/api/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          statusEl.textContent = data.message || 'Token saved, restarting agent...';
+          statusEl.classList.add('ok');
+        } else {
+          statusEl.textContent = data.detail || 'Save failed';
+          statusEl.classList.add('error');
+        }
+      } catch (e) {
+        statusEl.textContent = 'Connection error';
+        statusEl.classList.add('error');
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'status-msg'; }, 8000);
+      }
+    }
+
+    async function toggleReadings(event, pluginId) {
+      event.preventDefault();
+      const panel = document.getElementById('readings-' + pluginId);
+      const link = event.currentTarget;
+      if (!panel.hidden) {
+        panel.hidden = true;
+        link.textContent = 'View latest data';
+        return;
+      }
+      panel.hidden = false;
+      panel.innerHTML = '<span class="empty">Loading...</span>';
+      link.textContent = 'Hide latest data';
+      try {
+        const resp = await fetch('/api/readings/' + encodeURIComponent(pluginId));
+        const data = await resp.json();
+        const readings = data.readings || [];
+        panel.innerHTML = readings.length
+          ? '<table class="readings-table">' + readings.map(r =>
+              `<tr><td>${r.metric}</td><td>${r.value}${r.unit ? ' ' + r.unit : ''}</td></tr>`
+            ).join('') + '</table>'
+          : '<span class="empty">No data available</span>';
+      } catch (e) {
+        panel.innerHTML = '<span class="empty">Connection error while fetching data</span>';
+      }
+    }
+
+    async function toggleLogs() {
+      const panel = document.getElementById('logs-panel');
+      const btn = document.getElementById('logs-toggle');
+      if (!panel.hidden) {
+        panel.hidden = true;
+        btn.textContent = 'View logs';
+        return;
+      }
+      btn.disabled = true;
+      panel.hidden = false;
+      panel.textContent = 'Loading logs...';
+      try {
+        const resp = await fetch('/api/logs?lines=200');
+        const data = await resp.json();
+        panel.textContent = resp.ok ? (data.log || 'No log lines.') : (data.detail || 'Failed to fetch logs');
+      } catch (e) {
+        panel.textContent = 'Connection error while fetching logs.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Hide logs';
+      }
+    }
+
+    async function restartAgent() {
+      if (!confirm('Are you sure you want to restart the agent? Active integrations will be briefly interrupted.')) return;
+      const statusEl = document.getElementById('restart-status');
+      const btn = document.getElementById('restart-btn');
+      btn.disabled = true;
+      statusEl.className = 'status-msg';
+      try {
+        const resp = await fetch('/api/restart', { method: 'POST' });
+        const data = await resp.json();
+        statusEl.textContent = data.message || 'Restarting agent...';
+        statusEl.classList.add(resp.ok ? 'ok' : 'error');
+      } catch (e) {
+        statusEl.textContent = 'Connection error';
+        statusEl.classList.add('error');
+      } finally {
+        setTimeout(() => { btn.disabled = false; }, 5000);
+        setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'status-msg'; }, 8000);
+      }
+    }
+  </script>
+</body>
+</html>

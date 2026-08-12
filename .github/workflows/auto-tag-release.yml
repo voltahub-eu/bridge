@@ -1,0 +1,40 @@
+name: Auto-tag release
+
+# Every push to main becomes an installable/OTA-deployable version: the
+# agent reads its own version via `git describe --tags` (core/version.py)
+# and update.sh checks out a specific tag the platform sends — without a
+# tag, a merge to main has no version to reconcile against or roll back to.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Bump patch version and tag
+        run: |
+          set -euo pipefail
+          git fetch origin --tags --force
+          latest=$(git tag --list 'v[0-9]*' | sort -V | tail -n1)
+          if [ -z "$latest" ]; then
+            next="v1.0.0"
+          else
+            # v-prefix and dots split into MAJOR MINOR PATCH; only PATCH bumps
+            # automatically here — a MAJOR/MINOR bump is a deliberate human
+            # decision (e.g. breaking plugin API change), done by pushing a
+            # tag manually, which this workflow then just builds on top of.
+            IFS='.' read -r major minor patch <<< "${latest#v}"
+            next="v${major}.${minor}.$((patch + 1))"
+          fi
+          echo "Tagging $next (previous: ${latest:-none})"
+          git tag "$next"
+          git push origin "$next"
